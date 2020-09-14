@@ -1,3 +1,6 @@
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include <lora.h>
 #include <wiringPi.h>
 #include <wiringPiSPI.h>

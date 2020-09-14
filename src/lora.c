@@ -77,7 +77,7 @@ void opmode (uint8_t mode) {
     writeReg(REG_OPMODE, (readReg(REG_OPMODE) & ~OPMODE_MASK) | mode);
 }
 
-static void opmodeLora() {
+void opmodeLora() {
     uint8_t u = OPMODE_LORA;
     if (sx1272 == false)
         u |= 0x8;   // TBD: sx1276 high freq
@@ -250,7 +250,7 @@ void configPower (int8_t pw) {
 }
 
 
-static void writeBuf(byte addr, byte *value, byte len) {                                                       
+void writeBuf(byte addr, byte *value, byte len) {                                                       
     unsigned char spibuf[256];                                                                          
     spibuf[0] = addr | 0x80;                                                                            
     for (int i = 0; i < len; i++) {                                                                         

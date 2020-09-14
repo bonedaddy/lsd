@@ -261,6 +261,7 @@ void SetupLoRa()
     }
 
     opmode(OPMODE_SLEEP);
+    opmodeLora();
 
     // set frequency
     uint64_t frf = ((uint64_t)freq << 19) / 32000000;
@@ -442,7 +443,6 @@ int main (int argc, char *argv[]) {
     SetupLoRa();
 
     if (!strcmp("sender", argv[1])) {
-        opmodeLora();
         // enter standby mode (required for FIFO loading))
         opmode(OPMODE_STANDBY);
 
@@ -463,7 +463,6 @@ int main (int argc, char *argv[]) {
     } else {
 
         // radio init
-        opmodeLora();
         opmode(OPMODE_STANDBY);
         opmode(OPMODE_RX);
         printf("Listening at SF%i on %.6lf Mhz.\n", sf,(double)freq/1000000);

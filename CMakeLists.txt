@@ -62,4 +62,4 @@ add_library(lora
 target_link_libraries(lora ulog)
 
 add_executable(lora-cli ./main.c)
-target_link_libraries(lora-cli lora wiringPi pthread ulog)
+target_link_libraries(lora-cli lora wiringPi pthread ulog argtable3)

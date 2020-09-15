@@ -32,7 +32,8 @@ int main (int argc, char *argv[]) {
         .spi_channel = CHANNEL,
         .spi_speed = 500000,
         .config_power = 23,
-        .frequency = freq
+        .frequency = freq,
+        .sf = sf
     };
 
     lora_client_t *client = new_lora_client_t(opts);

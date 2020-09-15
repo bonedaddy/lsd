@@ -16,6 +16,8 @@
 
 volatile bool debug;  // means this can be accessed by other parts of the program
 volatile char buffer[90][255];
+void onReceive(int packetSize);
+void onTxDone();
 
 void setup() {
   malloc(90 * 255);

@@ -22,7 +22,7 @@
 #include <sys/ioctl.h>
 
 #include <wiringPi.h>
-#include <wiringPiSPI.h>
+#include <wiringPiSPI.h> 
 #include "lora.h"
 
 
@@ -30,7 +30,36 @@ char message[256];
 
 byte receivedbytes;
 
+/*!
+  * @brief returns a new lora client initializing the onboard device
+  * @warning it is not safe to return multiple clients, as this will
+  * @warning override the setting of the other
+*/
+lora_client_t *new_lora_client_t(lora_client_opts_t opts) {
+    thread_logger *thl = new_thread_logger(true);
+    if (thl == NULL) {
+        return NULL;
+    }
 
+    lora_client_t *client = calloc(1, sizeof(lora_client_t));
+    if (client == NULL) {
+        clear_thread_logger(thl);
+        return NULL;
+    }
+
+    wiringPiSetup();
+    pinMode(opts.ss_pin, OUTPUT);
+    pinMode(opts.dio_0, INPUT);
+    pinMode(opts.rst, OUTPUT);
+
+    wiringPiSPISetup(opts.spi_channel, opts.spi_speed);
+
+    SetupLoRa();
+
+    client->thl = thl;
+    
+    return client;
+}
 
 void die(const char *s)
 {

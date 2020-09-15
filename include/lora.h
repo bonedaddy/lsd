@@ -13,6 +13,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <logger.h>
 
 // #############################################
 // #############################################
@@ -138,6 +139,22 @@
 typedef unsigned char byte;
 typedef enum { SF7=7, SF8, SF9, SF10, SF11, SF12 } sf_t;
 
+/*!
+  * @brief used to configure lora_client_t during creation
+*/
+typedef struct lora_client_opts {
+    int ss_pin;
+    int dio_0;
+    int rst;
+    sf_t sf;
+    int spi_channel;
+    int spi_speed;
+} lora_client_opts_t;
+
+typedef struct lora_client {
+    thread_logger *thl;
+} lora_client_t;
+
 bool sx1272 = true;
 static const int CHANNEL = 0;
 
@@ -165,6 +182,13 @@ uint32_t  freq = 868100000; // in Mhz! (868.1)
  * @note function declaration
  *
 */
+
+/*!
+  * @brief returns a new lora client initializing the onboard device
+  * @warning it is not safe to return multiple clients, as this will
+  * @warning override the setting of the other
+*/
+lora_client_t *new_lora_client_t(lora_client_opts_t opts);
 
 void selectreceiver();
 void unselectreceiver();

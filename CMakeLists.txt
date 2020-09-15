@@ -41,6 +41,17 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 include_directories(${PROJECT_SOURCE_DIR}/include)
+include_directories(${PROJECT_SOURCE_DIR}/deps/ulog)
+
+file(GLOB_RECURSE ULOG_SOURCES
+    ./deps/ulog/*.h
+    ./deps/ulog/*.c
+)
+
+add_library(ulog
+    SHARED
+        ${ULOG_SOURCES}
+)
 
 add_library(lora 
     SHARED
@@ -48,5 +59,7 @@ add_library(lora
         ./src/lora.c
 )
 
+target_link_libraries(lora ulog)
+
 add_executable(lora-cli ./main.c)
-target_link_libraries(lora-cli lora wiringPi pthread)
+target_link_libraries(lora-cli lora wiringPi pthread ulog)

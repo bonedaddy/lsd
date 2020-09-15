@@ -47,6 +47,9 @@ lora_client_t *new_lora_client_t(lora_client_opts_t opts) {
         return NULL;
     }
 
+    client->thl = thl;
+    client->opts = opts;
+
     wiringPiSetup();
     pinMode(opts.ss_pin, OUTPUT);
     pinMode(opts.dio_0, INPUT);
@@ -54,10 +57,7 @@ lora_client_t *new_lora_client_t(lora_client_opts_t opts) {
 
     wiringPiSPISetup(opts.spi_channel, opts.spi_speed);
 
-    setup_lora(thl);
-
-    client->thl = thl;
-    client->opts = opts;
+    setup_lora(client);
 
     return client;
 }
@@ -67,13 +67,18 @@ lora_client_t *new_lora_client_t(lora_client_opts_t opts) {
 */
 void configure_sender(lora_client_t *client) {
     // enter standby mode (required for FIFO loading))
-    opmode(OPMODE_STANDBY);
+    opmode(client, OPMODE_STANDBY);
 
-    writeReg(RegPaRamp, (readReg(RegPaRamp) & 0xF0) | 0x08); // set PA ramp-up time 50 uSec
+    writeReg(client, RegPaRamp, (readReg(client, RegPaRamp) & 0xF0) | 0x08); // set PA ramp-up time 50 uSec
 
-    configPower(client->opts.config_power);
+    configPower(client, client->opts.config_power);
 
-    LOGF_INFO(client->thl, 0, "sending packets at SF%i on %.6lf Mhz", client->opts.sf,(double)freq/1000000);
+    LOGF_INFO(
+        client->thl,
+        0,
+        "sending packets at SF%i on %.6lf Mhz",
+        client->opts.sf,(double)client->opts.frequency/1000000
+    );
 }
 
 /*!
@@ -81,10 +86,16 @@ void configure_sender(lora_client_t *client) {
 */
 void configure_receiver(lora_client_t *client) {
     // radio init
-    opmode(OPMODE_STANDBY);
-    opmode(OPMODE_RX);
+    opmode(client, OPMODE_STANDBY);
+    opmode(client, OPMODE_RX);
 
-    LOGF_INFO(client->thl, 0, "listening at SF%i on %.6lf Mhz", client->opts.sf,(double)freq/1000000);
+    LOGF_INFO(
+        client->thl,
+        0,
+        "listening at SF%i on %.6lf Mhz",
+        client->opts.sf,
+        (double)client->opts.frequency/1000000
+    );
 }
 
 void die(const char *s)
@@ -93,150 +104,150 @@ void die(const char *s)
     exit(1);
 }
 
-void selectreceiver()
+void select_receiver(lora_client_t *client)
 {
-    digitalWrite(ssPin, LOW);
+    digitalWrite(client->opts.ss_pin, LOW);
 }
 
-void unselectreceiver()
+void unselect_receiver(lora_client_t *client)
 {
-    digitalWrite(ssPin, HIGH);
+    digitalWrite(client->opts.ss_pin, HIGH);
 }
 
-byte readReg(byte addr)
+byte readReg(lora_client_t *client, byte addr)
 {
     unsigned char spibuf[2];
 
-    selectreceiver();
+    select_receiver(client);
     spibuf[0] = addr & 0x7F;
     spibuf[1] = 0x00;
     wiringPiSPIDataRW(CHANNEL, spibuf, 2);
-    unselectreceiver();
+    unselect_receiver(client);
 
     return spibuf[1];
 }
 
-void writeReg(byte addr, byte value)
+void writeReg(lora_client_t *client, byte addr, byte value)
 {
     unsigned char spibuf[2];
 
     spibuf[0] = addr | 0x80;
     spibuf[1] = value;
-    selectreceiver();
+    select_receiver(client);
     wiringPiSPIDataRW(CHANNEL, spibuf, 2);
 
-    unselectreceiver();
+    unselect_receiver(client);
 }
 
-void opmode (uint8_t mode) {
-    writeReg(REG_OPMODE, (readReg(REG_OPMODE) & ~OPMODE_MASK) | mode);
+void opmode (lora_client_t *client, uint8_t mode) {
+    writeReg(client, REG_OPMODE, (readReg(client, REG_OPMODE) & ~OPMODE_MASK) | mode);
 }
 
-void opmodeLora() {
+void opmodeLora(lora_client_t *client) {
     uint8_t u = OPMODE_LORA;
     if (sx1272 == false)
         u |= 0x8;   // TBD: sx1276 high freq
-    writeReg(REG_OPMODE, u);
+    writeReg(client, REG_OPMODE, u);
 }
 
 
-void setup_lora(thread_logger *thl)
+void setup_lora(lora_client_t *client)
 {
     
-    digitalWrite(RST, HIGH);
+    digitalWrite(client->opts.rst, HIGH);
     delay(100);
-    digitalWrite(RST, LOW);
+    digitalWrite(client->opts.rst, LOW);
     delay(100);
 
-    byte version = readReg(REG_VERSION);
+    byte version = readReg(client, REG_VERSION);
 
     if (version == 0x22) {
         // sx1272
-        LOG_INFO(thl, 0, "SX1272 board detected, starting");
+        LOG_INFO(client->thl, 0, "SX1272 board detected, starting");
         sx1272 = true;
     } else {
         // sx1276?
-        digitalWrite(RST, LOW);
+        digitalWrite(client->opts.rst, LOW);
         delay(100);
-        digitalWrite(RST, HIGH);
+        digitalWrite(client->opts.rst, HIGH);
         delay(100);
-        version = readReg(REG_VERSION);
+        version = readReg(client, REG_VERSION);
         if (version == 0x12) {
             // sx1276
-            LOG_INFO(thl, 0, "SX1276 board detected, starting");
+            LOG_INFO(client->thl, 0, "SX1276 board detected, starting");
             sx1272 = false;
         } else {
-            LOG_ERROR(thl, 0, "unrecognized transceiver");
+            LOG_ERROR(client->thl, 0, "unrecognized transceiver");
             //printf("Version: 0x%x\n",version);
             exit(1);
         }
     }
 
-    opmode(OPMODE_SLEEP);
-    opmodeLora();
+    opmode(client, OPMODE_SLEEP);
+    opmodeLora(client);
 
     // set frequency
-    uint64_t frf = ((uint64_t)freq << 19) / 32000000;
-    writeReg(REG_FRF_MSB, (uint8_t)(frf>>16) );
-    writeReg(REG_FRF_MID, (uint8_t)(frf>> 8) );
-    writeReg(REG_FRF_LSB, (uint8_t)(frf>> 0) );
+    uint64_t frf = ((uint64_t)client->opts.frequency << 19) / 32000000;
+    writeReg(client, REG_FRF_MSB, (uint8_t)(frf>>16) );
+    writeReg(client, REG_FRF_MID, (uint8_t)(frf>> 8) );
+    writeReg(client, REG_FRF_LSB, (uint8_t)(frf>> 0) );
 
-    writeReg(REG_SYNC_WORD, 0x34); // LoRaWAN public sync word
+    writeReg(client, REG_SYNC_WORD, 0x34); // LoRaWAN public sync word
 
     if (sx1272) {
-        if (sf == SF11 || sf == SF12) {
-            writeReg(REG_MODEM_CONFIG,0x0B);
+        if (client->opts.sf == SF11 || client->opts.sf == SF12) {
+            writeReg(client, REG_MODEM_CONFIG,0x0B);
         } else {
-            writeReg(REG_MODEM_CONFIG,0x0A);
+            writeReg(client, REG_MODEM_CONFIG,0x0A);
         }
-        writeReg(REG_MODEM_CONFIG2,(sf<<4) | 0x04);
+        writeReg(client, REG_MODEM_CONFIG2,(client->opts.sf<<4) | 0x04);
     } else {
-        if (sf == SF11 || sf == SF12) {
-            writeReg(REG_MODEM_CONFIG3,0x0C);
+        if (client->opts.sf == SF11 || client->opts.sf == SF12) {
+            writeReg(client, REG_MODEM_CONFIG3,0x0C);
         } else {
-            writeReg(REG_MODEM_CONFIG3,0x04);
+            writeReg(client, REG_MODEM_CONFIG3,0x04);
         }
-        writeReg(REG_MODEM_CONFIG,0x72);
-        writeReg(REG_MODEM_CONFIG2,(sf<<4) | 0x04);
+        writeReg(client, REG_MODEM_CONFIG,0x72);
+        writeReg(client, REG_MODEM_CONFIG2,(client->opts.sf<<4) | 0x04);
     }
 
-    if (sf == SF10 || sf == SF11 || sf == SF12) {
-        writeReg(REG_SYMB_TIMEOUT_LSB,0x05);
+    if (client->opts.sf == SF10 || client->opts.sf == SF11 || client->opts.sf == SF12) {
+        writeReg(client, REG_SYMB_TIMEOUT_LSB,0x05);
     } else {
-        writeReg(REG_SYMB_TIMEOUT_LSB,0x08);
+        writeReg(client, REG_SYMB_TIMEOUT_LSB,0x08);
     }
-    writeReg(REG_MAX_PAYLOAD_LENGTH,0x80);
-    writeReg(REG_PAYLOAD_LENGTH,PAYLOAD_LENGTH);
-    writeReg(REG_HOP_PERIOD,0xFF);
-    writeReg(REG_FIFO_ADDR_PTR, readReg(REG_FIFO_RX_BASE_AD));
+    writeReg(client, REG_MAX_PAYLOAD_LENGTH,0x80);
+    writeReg(client, REG_PAYLOAD_LENGTH,PAYLOAD_LENGTH);
+    writeReg(client, REG_HOP_PERIOD,0xFF);
+    writeReg(client, REG_FIFO_ADDR_PTR, readReg(client, REG_FIFO_RX_BASE_AD));
 
-    writeReg(REG_LNA, LNA_MAX_GAIN);
+    writeReg(client, REG_LNA, LNA_MAX_GAIN);
 
 }
 
-bool receive(char *payload) {
+bool receive(lora_client_t *client, char *payload) {
     // clear rxDone
-    writeReg(REG_IRQ_FLAGS, 0x40);
+    writeReg(client, REG_IRQ_FLAGS, 0x40);
 
-    int irqflags = readReg(REG_IRQ_FLAGS);
+    int irqflags = readReg(client, REG_IRQ_FLAGS);
 
     //  payload crc: 0x20
     if((irqflags & 0x20) == 0x20)
     {
         printf("CRC error\n");
-        writeReg(REG_IRQ_FLAGS, 0x20);
+        writeReg(client, REG_IRQ_FLAGS, 0x20);
         return false;
     } else {
 
-        byte currentAddr = readReg(REG_FIFO_RX_CURRENT_ADDR);
-        byte receivedCount = readReg(REG_RX_NB_BYTES);
+        byte currentAddr = readReg(client, REG_FIFO_RX_CURRENT_ADDR);
+        byte receivedCount = readReg(client, REG_RX_NB_BYTES);
         receivedbytes = receivedCount;
 
-        writeReg(REG_FIFO_ADDR_PTR, currentAddr);
+        writeReg(client, REG_FIFO_ADDR_PTR, currentAddr);
 
         for(int i = 0; i < receivedCount; i++)
         {
-            payload[i] = (char)readReg(REG_FIFO);
+            payload[i] = (char)readReg(client, REG_FIFO);
         }
     }
     return true;
@@ -247,10 +258,10 @@ void receive_packet(lora_client_t *client) {
     long int SNR;
     int rssicorr;
 
-    if(digitalRead(dio0) == 1)
+    if(digitalRead(client->opts.dio_0) == 1)
     {
-        if(receive(message)) {
-            byte value = readReg(REG_PKT_SNR_VALUE);
+        if(receive(client, message)) {
+            byte value = readReg(client, REG_PKT_SNR_VALUE);
             if( value & 0x80 ) // The SNR sign bit is 1
             {
                 // Invert and divide by 4
@@ -272,8 +283,8 @@ void receive_packet(lora_client_t *client) {
                 client->thl, 
                 0, 
                 "packet rssi: %d, rssi: %d, snr: %li, length: %i, payload: %s",
-                readReg(0x1A)-rssicorr,
-                readReg(0x1B)-rssicorr,
+                readReg(client, 0x1A)-rssicorr,
+                readReg(client, 0x1B)-rssicorr,
                 SNR,
                 (int)receivedbytes,
                 message
@@ -284,7 +295,7 @@ void receive_packet(lora_client_t *client) {
     } // dio0=1
 }
 
-void configPower (int8_t pw) {
+void configPower (lora_client_t *client, int8_t pw) {
     if (sx1272 == false) {
         // no boost used for now
         if(pw >= 17) {
@@ -293,8 +304,8 @@ void configPower (int8_t pw) {
             pw = 2;
         }
         // check board type for BOOST pin
-        writeReg(RegPaConfig, (uint8_t)(0x80|(pw&0xf)));
-        writeReg(RegPaDac, readReg(RegPaDac)|0x4);
+        writeReg(client, RegPaConfig, (uint8_t)(0x80|(pw&0xf)));
+        writeReg(client, RegPaDac, readReg(client, RegPaDac)|0x4);
 
     } else {
         // set PA config (2-17 dBm using PA_BOOST)
@@ -303,40 +314,40 @@ void configPower (int8_t pw) {
         } else if(pw < 2) {
             pw = 2;
         }
-        writeReg(RegPaConfig, (uint8_t)(0x80|(pw-2)));
+        writeReg(client, RegPaConfig, (uint8_t)(0x80|(pw-2)));
     }
 }
 
 
-void writeBuf(byte addr, byte *value, byte len) {                                                       
+void writeBuf(lora_client_t *client, byte addr, byte *value, byte len) {                                                       
     unsigned char spibuf[256];                                                                          
     spibuf[0] = addr | 0x80;                                                                            
     for (int i = 0; i < len; i++) {                                                                         
         spibuf[i + 1] = value[i];                                                                       
     }                                                                                                   
-    selectreceiver();                                                                                   
+    select_receiver(client);                                                                                   
     wiringPiSPIDataRW(CHANNEL, spibuf, len + 1);                                                        
-    unselectreceiver();                                                                                 
+    unselect_receiver(client);                                                                                 
 }
 
-void txlora(byte *frame, byte datalen) {
+void txlora(lora_client_t *client, byte *frame, byte datalen) {
 
     // set the IRQ mapping DIO0=TxDone DIO1=NOP DIO2=NOP
-    writeReg(RegDioMapping1, MAP_DIO0_LORA_TXDONE|MAP_DIO1_LORA_NOP|MAP_DIO2_LORA_NOP);
+    writeReg(client, RegDioMapping1, MAP_DIO0_LORA_TXDONE|MAP_DIO1_LORA_NOP|MAP_DIO2_LORA_NOP);
     // clear all radio IRQ flags
-    writeReg(REG_IRQ_FLAGS, 0xFF);
+    writeReg(client, REG_IRQ_FLAGS, 0xFF);
     // mask all IRQs but TxDone
-    writeReg(REG_IRQ_FLAGS_MASK, ~IRQ_LORA_TXDONE_MASK);
+    writeReg(client, REG_IRQ_FLAGS_MASK, ~IRQ_LORA_TXDONE_MASK);
 
     // initialize the payload size and address pointers
-    writeReg(REG_FIFO_TX_BASE_AD, 0x00);
-    writeReg(REG_FIFO_ADDR_PTR, 0x00);
-    writeReg(REG_PAYLOAD_LENGTH, datalen);
+    writeReg(client, REG_FIFO_TX_BASE_AD, 0x00);
+    writeReg(client, REG_FIFO_ADDR_PTR, 0x00);
+    writeReg(client, REG_PAYLOAD_LENGTH, datalen);
 
     // download buffer to the radio FIFO
-    writeBuf(REG_FIFO, frame, datalen);
+    writeBuf(client, REG_FIFO, frame, datalen);
     // now we actually start the transmission
-    opmode(OPMODE_TX);
+    opmode(client, OPMODE_TX);
 
     printf("send: %s\n", frame);
 }

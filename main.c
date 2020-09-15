@@ -7,6 +7,17 @@
 
 byte hello[32] = "HELLO";
 
+// SX1272 - Raspberry connections
+int ssPin = 6;
+int dio0  = 7;
+int RST   = 0;
+
+// Set spreading factor (SF7 - SF12)
+sf_t sf = SF7;
+
+// Set center frequency
+uint32_t  freq = 868100000; // in Mhz! (868.1)
+
 int main (int argc, char *argv[]) {
 
     if (argc < 2) {
@@ -20,7 +31,8 @@ int main (int argc, char *argv[]) {
         .rst = RST,
         .spi_channel = CHANNEL,
         .spi_speed = 500000,
-        .config_power = 23
+        .config_power = 23,
+        .frequency = freq
     };
 
     lora_client_t *client = new_lora_client_t(opts);
@@ -37,7 +49,7 @@ int main (int argc, char *argv[]) {
             strncpy((char *)hello, argv[2], sizeof(hello));
 
         while(1) {
-            txlora(hello, strlen((char *)hello));
+            txlora(client, hello, strlen((char *)hello));
             delay(5000);
         }
     } else {

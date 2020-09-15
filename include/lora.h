@@ -150,8 +150,8 @@ typedef struct lora_client_opts {
     int spi_channel;
     int spi_speed;
     int8_t config_power;
+    uint32_t frequency;
 } lora_client_opts_t;
-
 
 /*!
   * @brief groups together a logger, and client options
@@ -163,25 +163,6 @@ typedef struct lora_client {
 
 bool sx1272 = true;
 static const int CHANNEL = 0;
-
-/*!
- *
- * @note Configure these values!
- * @todo move to compile time macro definitions
- *
-*/
-
-// SX1272 - Raspberry connections
-int ssPin = 6;
-int dio0  = 7;
-int RST   = 0;
-
-// Set spreading factor (SF7 - SF12)
-sf_t sf = SF7;
-
-// Set center frequency
-uint32_t  freq = 868100000; // in Mhz! (868.1)
-
 
 /*!
  *
@@ -206,20 +187,21 @@ void configure_sender(lora_client_t *client);
 */
 void configure_receiver(lora_client_t *client);
 
-void selectreceiver();
-void unselectreceiver();
-void writeReg(byte addr, byte value);
-byte readReg(byte addr);
-void opmode (uint8_t mode);
-void opmodeLora();
-void setup_lora(thread_logger *thl);
-bool receive(char *payload);
+void select_receiver(lora_client_t *client);
+void unselect_receiver(lora_client_t *client);
+
+void writeReg(lora_client_t *client, byte addr, byte value);
+byte readReg(lora_client_t *client, byte addr);
+void opmode (lora_client_t *client, uint8_t mode);
+void opmodeLora(lora_client_t *client);
+void setup_lora(lora_client_t *client);
+bool receive(lora_client_t *client, char *payload);
 
 /*!
   * @brief used to receive a packet off the radio
 */
 void receive_packet(lora_client_t *client);
 
-void configPower (int8_t pw);
-void writeBuf(byte addr, byte *value, byte len);
-void txlora(byte *frame, byte datalen);
+void configPower (lora_client_t *client, int8_t pw);
+void writeBuf(lora_client_t *client, byte addr, byte *value, byte len);
+void txlora(lora_client_t *client, byte *frame, byte datalen);

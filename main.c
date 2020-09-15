@@ -22,7 +22,7 @@ int main (int argc, char *argv[]) {
     }
 
     LOG_INFO(client->thl, 0, "lora client initialized");
-    
+
     if (!strcmp("sender", argv[1])) {
         // enter standby mode (required for FIFO loading))
         opmode(OPMODE_STANDBY);
@@ -46,8 +46,9 @@ int main (int argc, char *argv[]) {
         // radio init
         opmode(OPMODE_STANDBY);
         opmode(OPMODE_RX);
-        printf("Listening at SF%i on %.6lf Mhz.\n", sf,(double)freq/1000000);
-        printf("------------------\n");
+
+        LOGF_INFO(client->thl, 0, "listening at SF%i on %.6lf Mhz", sf,(double)freq/1000000);
+
         while(1) {
             receivepacket(); 
             delay(1);

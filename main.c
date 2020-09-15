@@ -68,10 +68,7 @@ int main (int argc, char *argv[]) {
     if (rst->count == 0) {
         rst->ival = &RST;
     }
-
-    printf("sspin: %i\tdio0: %i\trst: %i\n", *ss_pin->ival, *dio_0->ival, *rst->ival);
-    printf("mode: %s\n", *mode->sval);
-
+    
     lora_client_opts_t opts = {
         .ss_pin = *ss_pin->ival,
         .dio_0 = *dio_0->ival,

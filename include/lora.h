@@ -201,7 +201,7 @@ void writeReg(byte addr, byte value);
 byte readReg(byte addr);
 void opmode (uint8_t mode);
 void opmodeLora();
-void SetupLoRa();
+void setup_lora(thread_logger *thl);
 bool receive(char *payload);
 
 /*!

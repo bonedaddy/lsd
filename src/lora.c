@@ -54,7 +54,7 @@ lora_client_t *new_lora_client_t(lora_client_opts_t opts) {
 
     wiringPiSPISetup(opts.spi_channel, opts.spi_speed);
 
-    SetupLoRa();
+    setup_lora(thl);
 
     client->thl = thl;
     client->opts = opts;
@@ -115,7 +115,7 @@ void opmodeLora() {
 }
 
 
-void SetupLoRa()
+void setup_lora(thread_logger *thl)
 {
     
     digitalWrite(RST, HIGH);
@@ -127,7 +127,7 @@ void SetupLoRa()
 
     if (version == 0x22) {
         // sx1272
-        printf("SX1272 detected, starting.\n");
+        LOG_INFO(thl, 0, "SX1272 board detected, starting");
         sx1272 = true;
     } else {
         // sx1276?
@@ -138,10 +138,10 @@ void SetupLoRa()
         version = readReg(REG_VERSION);
         if (version == 0x12) {
             // sx1276
-            printf("SX1276 detected, starting.\n");
+            LOG_INFO(thl, 0, "SX1276 board detected, starting");
             sx1272 = false;
         } else {
-            printf("Unrecognized transceiver.\n");
+            LOG_ERROR(thl, 0, "unrecognized transceiver");
             //printf("Version: 0x%x\n",version);
             exit(1);
         }

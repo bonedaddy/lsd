@@ -25,8 +25,6 @@
 #include <wiringPi.h>
 #include <wiringPiSPI.h>
 
-char message[256];
-
 byte receivedbytes;
 
 /*!
@@ -237,13 +235,13 @@ bool receive(lora_client_t *client, char *payload) {
     return true;
 }
 
-void receive_packet(lora_client_t *client) {
+void receive_packet(lora_client_t *client, char *buffer) {
 
     long int SNR;
     int rssicorr;
 
     if (digitalRead(client->opts.dio_0) == 1) {
-        if (receive(client, message)) {
+        if (receive(client, buffer)) {
             byte value = readReg(client, REG_PKT_SNR_VALUE);
             if (value & 0x80) // The SNR sign bit is 1
             {
@@ -264,7 +262,7 @@ void receive_packet(lora_client_t *client) {
                       "packet rssi: %d, rssi: %d, snr: %li, length: %i, payload: %s",
                       readReg(client, 0x1A) - rssicorr,
                       readReg(client, 0x1B) - rssicorr, SNR, (int)receivedbytes,
-                      message);
+                      buffer);
 
         } // received a message
 

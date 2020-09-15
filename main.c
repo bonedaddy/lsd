@@ -99,8 +99,12 @@ int main(int argc, char *argv[]) {
 
         configure_receiver(client);
 
+        char buffer[256];
+
         while (1) {
-            receive_packet(client);
+            memset(buffer, 0, 256);
+            receive_packet(client, buffer);
+            LOGF_INFO(client->thl, 0, "received a message: %s", buffer);
             delay(1);
         }
     }

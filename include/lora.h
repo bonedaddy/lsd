@@ -200,7 +200,7 @@ bool receive(lora_client_t *client, char *payload);
 /*!
  * @brief used to receive a packet off the radio
  */
-void receive_packet(lora_client_t *client);
+void receive_packet(lora_client_t *client, char *buffer);
 
 void configPower(lora_client_t *client, int8_t pw);
 void writeBuf(lora_client_t *client, byte addr, byte *value, byte len);

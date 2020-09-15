@@ -50,7 +50,7 @@ int main (int argc, char *argv[]) {
         LOGF_INFO(client->thl, 0, "listening at SF%i on %.6lf Mhz", sf,(double)freq/1000000);
 
         while(1) {
-            receivepacket(); 
+            receive_packet(client); 
             delay(1);
         }
 

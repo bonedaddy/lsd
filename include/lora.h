@@ -151,8 +151,13 @@ typedef struct lora_client_opts {
     int spi_speed;
 } lora_client_opts_t;
 
+
+/*!
+  * @brief groups together a logger, and client options
+*/
 typedef struct lora_client {
     thread_logger *thl;
+    lora_client_opts_t opts;
 } lora_client_t;
 
 bool sx1272 = true;
@@ -198,7 +203,12 @@ void opmode (uint8_t mode);
 void opmodeLora();
 void SetupLoRa();
 bool receive(char *payload);
-void receivepacket();
+
+/*!
+  * @brief used to receive a packet off the radio
+*/
+void receive_packet(lora_client_t *client);
+
 void configPower (int8_t pw);
 void writeBuf(byte addr, byte *value, byte len);
 void txlora(byte *frame, byte datalen);

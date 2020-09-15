@@ -57,7 +57,8 @@ lora_client_t *new_lora_client_t(lora_client_opts_t opts) {
     SetupLoRa();
 
     client->thl = thl;
-    
+    client->opts = opts;
+
     return client;
 }
 
@@ -216,7 +217,7 @@ bool receive(char *payload) {
     return true;
 }
 
-void receivepacket() {
+void receive_packet(lora_client_t *client) {
 
     long int SNR;
     int rssicorr;
@@ -242,13 +243,16 @@ void receivepacket() {
             } else {
                 rssicorr = 157;
             }
-
-            printf("Packet RSSI: %d, ", readReg(0x1A)-rssicorr);
-            printf("RSSI: %d, ", readReg(0x1B)-rssicorr);
-            printf("SNR: %li, ", SNR);
-            printf("Length: %i", (int)receivedbytes);
-            printf("\n");
-            printf("Payload: %s\n", message);
+            LOGF_INFO(
+                client->thl, 
+                0, 
+                "packet rssi: %d, rssi: %d, snr: %li, length: %i, payload: %s",
+                readReg(0x1A)-rssicorr,
+                readReg(0x1B)-rssicorr,
+                SNR,
+                (int)receivedbytes,
+                message
+            );
 
         } // received a message
 

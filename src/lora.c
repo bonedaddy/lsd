@@ -62,6 +62,31 @@ lora_client_t *new_lora_client_t(lora_client_opts_t opts) {
     return client;
 }
 
+/*!
+  * @brief configures the client for sending lora packets
+*/
+void configure_sender(lora_client_t *client) {
+    // enter standby mode (required for FIFO loading))
+    opmode(OPMODE_STANDBY);
+
+    writeReg(RegPaRamp, (readReg(RegPaRamp) & 0xF0) | 0x08); // set PA ramp-up time 50 uSec
+
+    configPower(client->opts.config_power);
+
+    LOGF_INFO(client->thl, 0, "sending packets at SF%i on %.6lf Mhz", client->opts.sf,(double)freq/1000000);
+}
+
+/*!
+  * @brief configures the client for receiving lora packets
+*/
+void configure_receiver(lora_client_t *client) {
+    // radio init
+    opmode(OPMODE_STANDBY);
+    opmode(OPMODE_RX);
+
+    LOGF_INFO(client->thl, 0, "listening at SF%i on %.6lf Mhz", client->opts.sf,(double)freq/1000000);
+}
+
 void die(const char *s)
 {
     perror(s);

@@ -149,6 +149,7 @@ typedef struct lora_client_opts {
     sf_t sf;
     int spi_channel;
     int spi_speed;
+    int8_t config_power;
 } lora_client_opts_t;
 
 
@@ -194,6 +195,16 @@ uint32_t  freq = 868100000; // in Mhz! (868.1)
   * @warning override the setting of the other
 */
 lora_client_t *new_lora_client_t(lora_client_opts_t opts);
+
+/*!
+  * @brief configures the client for sending lora packets
+*/
+void configure_sender(lora_client_t *client);
+
+/*!
+  * @brief configures the client for receiving lora packets
+*/
+void configure_receiver(lora_client_t *client);
 
 void selectreceiver();
 void unselectreceiver();

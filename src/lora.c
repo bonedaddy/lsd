@@ -92,8 +92,6 @@ void event_loop_lora_client_t(lora_client_t *client, event_loop_opts_t opts) {
                        (size_t)bytesReceived); // send the actual data
                 delay(opts.send_delay);
                 configure_receiver(client); // configure for receive mode
-            } else {
-                delay(1);
             }
         }
     }

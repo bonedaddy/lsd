@@ -1,5 +1,12 @@
 #include <LoRa.h>
 
+#define SF 7
+#define SYNC_WORD 0x34
+
+void onReceive(int packetSize);
+void onTxDone();
+
+bool first_run = true;
 
 void setup() {
   Serial.begin(9600);
@@ -12,15 +19,33 @@ void setup() {
     Serial.println("Starting LoRa failed!");
     while (1);
   }
+  LoRa.setSpreadingFactor(SF);
+  LoRa.setSyncWord(SYNC_WORD);
+  LoRa.onReceive(onReceive);
+  LoRa.onTxDone(onTxDone);
+  LoRa.receive();
 }
 
 
+void onTxDone() { LoRa.receive(); }
+
+// callback function whenever we receive a LoRa packet
+void onReceive(int packetSize) {
+  if (packetSize) {
+    char buffer[255];
+    int num = LoRa.readBytes(buffer, 255);
+    Serial.write(buffer, num);
+    Serial.flush();
+    if (LoRa.beginPacket()) {
+      LoRa.print(buffer);
+      LoRa.endPacket();
+      LoRa.receive();
+    }
+  }
+}
+
 
 void loop() {
-  // send packet
-  LoRa.beginPacket();
-  LoRa.print("hello world");
-  //LoRa.print(counter);
-  LoRa.endPacket();
+
 }
 

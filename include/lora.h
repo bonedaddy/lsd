@@ -214,7 +214,7 @@ byte readReg(lora_client_t *client, byte addr);
 void opmode(lora_client_t *client, uint8_t mode);
 void opmodeLora(lora_client_t *client);
 void setup_lora(lora_client_t *client);
-bool receive(lora_client_t *client, char *payload);
+byte receive(lora_client_t *client, char *payload);
 
 /*!
  * @brief used to receive a packet off the radio

@@ -85,7 +85,7 @@ void event_loop_lora_client_t(lora_client_t *client, bool mode_receive, byte *da
             if (bytesReceived > 0) {
                 configure_sender(client); // configure for send mode
                 txlora(client, buffer, (size_t)bytesReceived); // send the actual data
-                delay(100);
+                delay(1000);
                 configure_receiver(client); // configure for receive mode
 
             }

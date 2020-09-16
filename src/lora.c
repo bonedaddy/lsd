@@ -84,14 +84,14 @@ void event_loop_lora_client_t(lora_client_t *client, event_loop_opts_t opts) {
             }
             memset(buffer, 0, 256);
             bytesReceived = receive_packet(client, buffer);
-            if (bytesReceived > 0) {
+            if (bytesReceived > 0 && opts.rebroadcast == true) {
                 configure_sender(client); // configure for send mode
                 txlora(client, buffer, (size_t)bytesReceived); // send the actual data
                 delay(opts.send_delay);
                 configure_receiver(client); // configure for receive mode
-
+            } else {
+                delay(1);
             }
-            delay(1);
         }
     }
 }

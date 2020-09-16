@@ -58,6 +58,7 @@ void free_lora_client_t(lora_client_t *client) {
  * @param data when mode_receive is set to false, this is the data we will transmit
  */
 void event_loop_lora_client_t(lora_client_t *client, bool mode_receive, byte *data) {
+    byte bytesReceived = 0;
     if (mode_receive == false) {
 
         configure_sender(client);
@@ -80,7 +81,14 @@ void event_loop_lora_client_t(lora_client_t *client, bool mode_receive, byte *da
                 return;
             }
             memset(buffer, 0, 256);
-            receive_packet(client, buffer);
+            bytesReceived = receive_packet(client, buffer);
+            if (bytesReceived > 0) {
+                configure_sender(client); // configure for send mode
+                txlora(client, buffer, (size_t)bytesReceived); // send the actual data
+                delay(100);
+                configure_receiver(client); // configure for receive mode
+
+            }
             delay(1);
         }
     }
@@ -138,7 +146,7 @@ void configure_sender(lora_client_t *client) {
 
     configPower(client, client->opts.config_power);
 
-    LOGF_INFO(client->thl, 0, "sending packets at SF%i on %.6lf Mhz",
+    LOGF_DEBUG(client->thl, 0, "sending packets at SF%i on %.6lf Mhz",
               client->opts.sf, (double)client->opts.frequency / 1000000);
 }
 
@@ -150,7 +158,7 @@ void configure_receiver(lora_client_t *client) {
     opmode(client, OPMODE_STANDBY);
     opmode(client, OPMODE_RX);
 
-    LOGF_INFO(client->thl, 0, "listening at SF%i on %.6lf Mhz", client->opts.sf,
+    LOGF_DEBUG(client->thl, 0, "listening at SF%i on %.6lf Mhz", client->opts.sf,
               (double)client->opts.frequency / 1000000);
 }
 
@@ -302,13 +310,14 @@ byte receive(lora_client_t *client, char *payload) {
     return receivedBytes;
 }
 
-void receive_packet(lora_client_t *client, char *buffer) {
+byte receive_packet(lora_client_t *client, char *buffer) {
 
-    long int SNR;
-    int rssicorr;
-
+    long int SNR; // should we initialize to 0
+    int rssicorr; // should we initialize to 0?
+    byte receivedBytes = 0;
+    
     if (digitalRead(client->opts.dio_0) == 1) {
-        byte receivedBytes = receive(client, buffer);
+        receivedBytes = receive(client, buffer);
         if (receivedBytes > 0) {
             byte value = readReg(client, REG_PKT_SNR_VALUE);
             if (value & 0x80) // The SNR sign bit is 1
@@ -334,6 +343,7 @@ void receive_packet(lora_client_t *client, char *buffer) {
         } // received a message
 
     } // dio0=1
+    return receivedBytes;
 }
 
 void configPower(lora_client_t *client, int8_t pw) {

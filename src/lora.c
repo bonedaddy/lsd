@@ -55,6 +55,8 @@ void free_lora_client_t(lora_client_t *client) {
 
 /*!
  * @brief main event loop
+ * @param mode_receive if true indicates we are receiving data, if false indicates we are transmitting
+ * @param data when mode_receive is set to false, this is the data we will transmit
  */
 void event_loop_lora_client_t(lora_client_t *client, bool mode_receive, byte *data) {
     if (mode_receive == false) {

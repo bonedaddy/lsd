@@ -26,8 +26,6 @@
 #include <wiringPi.h>
 #include <wiringPiSPI.h>
 
-byte receivedbytes;
-
 /*!
  * @brief when set to true, causes the event loop to exit
  */
@@ -278,7 +276,8 @@ void setup_lora(lora_client_t *client) {
     writeReg(client, REG_LNA, LNA_MAX_GAIN);
 }
 
-bool receive(lora_client_t *client, char *payload) {
+byte receive(lora_client_t *client, char *payload) {
+    byte receivedBytes = 0;
     // clear rxDone
     writeReg(client, REG_IRQ_FLAGS, 0x40);
 
@@ -288,12 +287,12 @@ bool receive(lora_client_t *client, char *payload) {
     if ((irqflags & 0x20) == 0x20) {
         printf("CRC error\n");
         writeReg(client, REG_IRQ_FLAGS, 0x20);
-        return false;
+        return receivedBytes;
     } else {
 
         byte currentAddr = readReg(client, REG_FIFO_RX_CURRENT_ADDR);
         byte receivedCount = readReg(client, REG_RX_NB_BYTES);
-        receivedbytes = receivedCount;
+        receivedBytes = receivedCount;
 
         writeReg(client, REG_FIFO_ADDR_PTR, currentAddr);
 
@@ -301,7 +300,7 @@ bool receive(lora_client_t *client, char *payload) {
             payload[i] = (char)readReg(client, REG_FIFO);
         }
     }
-    return true;
+    return receivedBytes;
 }
 
 void receive_packet(lora_client_t *client, char *buffer) {
@@ -310,7 +309,8 @@ void receive_packet(lora_client_t *client, char *buffer) {
     int rssicorr;
 
     if (digitalRead(client->opts.dio_0) == 1) {
-        if (receive(client, buffer)) {
+        byte receivedBytes = receive(client, buffer);
+        if (receivedBytes > 0) {
             byte value = readReg(client, REG_PKT_SNR_VALUE);
             if (value & 0x80) // The SNR sign bit is 1
             {
@@ -330,9 +330,8 @@ void receive_packet(lora_client_t *client, char *buffer) {
             LOGF_INFO(client->thl, 0,
                       "packet rssi: %d, rssi: %d, snr: %li, length: %i, payload: %s",
                       readReg(client, 0x1A) - rssicorr,
-                      readReg(client, 0x1B) - rssicorr, SNR, (int)receivedbytes,
+                      readReg(client, 0x1B) - rssicorr, SNR, (int)receivedBytes,
                       buffer);
-
         } // received a message
 
     } // dio0=1

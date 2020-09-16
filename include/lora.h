@@ -190,6 +190,7 @@ typedef struct event_loop_opts {
 typedef struct lora_client {
     thread_logger *thl;
     lora_client_opts_t opts;
+    bool sx1272;
 } lora_client_t;
 
 /*!
@@ -202,8 +203,6 @@ event_loop_opts_t default_options = {
     .send_data = NULL,
     .send_data_len = 0,
 };
-
-bool sx1272 = true;
 
 /*!
  * @brief used to free up resources allocated for lora_client_t

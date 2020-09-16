@@ -210,7 +210,7 @@ void opmode(lora_client_t *client, uint8_t mode) {
 
 void opmodeLora(lora_client_t *client) {
     uint8_t u = OPMODE_LORA;
-    if (sx1272 == false)
+    if (client->sx1272 == false)
         u |= 0x8; // TBD: sx1276 high freq
     writeReg(client, REG_OPMODE, u);
 }
@@ -227,7 +227,7 @@ void setup_lora(lora_client_t *client) {
     if (version == 0x22) {
         // sx1272
         LOG_INFO(client->thl, 0, "SX1272 board detected, starting");
-        sx1272 = true;
+        client->sx1272 = true;
     } else {
         // sx1276?
         digitalWrite(client->opts.rst, LOW);
@@ -238,7 +238,7 @@ void setup_lora(lora_client_t *client) {
         if (version == 0x12) {
             // sx1276
             LOG_INFO(client->thl, 0, "SX1276 board detected, starting");
-            sx1272 = false;
+            client->sx1272 = false;
         } else {
             LOG_ERROR(client->thl, 0, "unrecognized transceiver");
             // printf("Version: 0x%x\n",version);
@@ -257,7 +257,7 @@ void setup_lora(lora_client_t *client) {
 
     writeReg(client, REG_SYNC_WORD, 0x34); // LoRaWAN public sync word
 
-    if (sx1272) {
+    if (client->sx1272) {
         if (client->opts.sf == SF11 || client->opts.sf == SF12) {
             writeReg(client, REG_MODEM_CONFIG, 0x0B);
         } else {
@@ -335,7 +335,7 @@ byte receive_packet(lora_client_t *client, char *buffer) {
                 SNR = (value & 0xFF) >> 2;
             }
 
-            if (sx1272) {
+            if (client->sx1272) {
                 rssicorr = 139;
             } else {
                 rssicorr = 157;
@@ -352,7 +352,7 @@ byte receive_packet(lora_client_t *client, char *buffer) {
 }
 
 void configPower(lora_client_t *client, int8_t pw) {
-    if (sx1272 == false) {
+    if (client->sx1272 == false) {
         // no boost used for now
         if (pw >= 17) {
             pw = 15;

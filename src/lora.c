@@ -81,7 +81,6 @@ void event_loop_lora_client_t(lora_client_t *client, bool mode_receive, byte *da
             }
             memset(buffer, 0, 256);
             receive_packet(client, buffer);
-            LOGF_INFO(client->thl, 0, "received a message: %s", buffer);
             delay(1);
         }
     }

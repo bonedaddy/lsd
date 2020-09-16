@@ -52,6 +52,7 @@ void loop() {
 
 #include <LoRa.h>
 
+int counter = 0;
 
 void setup() {
   Serial.begin(9600);
@@ -71,9 +72,15 @@ void setup() {
 void loop() {
   // send packet
   LoRa.beginPacket();
-  LoRa.print("hello world");
-  //LoRa.print(counter);
+  char buffer[32];
+
+  sprintf(buffer, "hello world: %i", counter);
+
+  LoRa.print(buffer);
+
   LoRa.endPacket();
+
+  counter += 1;
 }
 
 

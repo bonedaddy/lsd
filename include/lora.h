@@ -18,6 +18,13 @@
 // #############################################
 // #############################################
 
+/*!
+ * @brief can be changed via compile time variables if needed
+ */
+#ifndef CHANNEL
+#define CHANNEL 0
+#endif
+
 // frequency declarations, which one you use
 // will ultimately depend on the board you have
 // some frequencies may be subject to regulations
@@ -165,15 +172,37 @@ typedef struct lora_client_opts {
 } lora_client_opts_t;
 
 /*!
+ * @brief used to configure the event loop
+ * @note the send data consists of data to send once the event loop starts
+ * @note and it isn't necessary to be set, only if mode_receive is false
+ */
+typedef struct event_loop_opts {
+    bool mode_receive;
+    bool rebroadcast;
+    unsigned int send_delay;
+    byte *send_data; /*! @brief can be set to NULL if not sending any data */
+    size_t send_data_len;
+} event_loop_opts_t;
+
+/*!
  * @brief groups together a logger, and client options
  */
 typedef struct lora_client {
     thread_logger *thl;
     lora_client_opts_t opts;
+    bool sx1272;
 } lora_client_t;
 
-bool sx1272 = true;
-static const int CHANNEL = 0;
+/*!
+ * @brief sensible default options to feed into the event loop function
+ */
+event_loop_opts_t default_options = {
+    .mode_receive = true,
+    .rebroadcast = true,
+    .send_delay = 5000,
+    .send_data = NULL,
+    .send_data_len = 0,
+};
 
 /*!
  * @brief used to free up resources allocated for lora_client_t
@@ -186,7 +215,7 @@ void free_lora_client_t(lora_client_t *client);
  * are transmitting
  * @param data when mode_receive is set to false, this is the data we will transmit
  */
-void event_loop_lora_client_t(lora_client_t *client, bool mode_receive, byte *data);
+void event_loop_lora_client_t(lora_client_t *client, event_loop_opts_t opts);
 
 /*!
  * @brief returns a new lora client initializing the onboard device
@@ -217,8 +246,9 @@ byte receive(lora_client_t *client, char *payload);
 
 /*!
  * @brief used to receive a packet off the radio
+ * @return size of the payload we received after parsing the packet
  */
-void receive_packet(lora_client_t *client, char *buffer);
+byte receive_packet(lora_client_t *client, char *buffer);
 
 void configPower(lora_client_t *client, int8_t pw);
 void writeBuf(lora_client_t *client, byte addr, byte *value, byte len);

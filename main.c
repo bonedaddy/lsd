@@ -18,15 +18,41 @@ int ssPin = 6;
 int dio0 = 7;
 int RST = 0;
 
+int rebroadcast_default = 0;
+
 // Set spreading factor (SF7 - SF12)
 sf_t sf = SF7;
 
 struct arg_lit *help;
-struct arg_int *ss_pin, *dio_0, *rst;
+struct arg_int *ss_pin, *dio_0, *rst, *rebroadcast;
 struct arg_end *end;
 struct arg_str *mode;
 
 const char *client_mode = "receive";
+
+void set_defaults() {
+    // handle default values pulled in from globals
+
+    if (mode->count == 0) {
+        mode->sval = &client_mode;
+    }
+
+    if (ss_pin->count == 0) {
+        ss_pin->ival = &ssPin;
+    }
+
+    if (dio_0->count == 0) {
+        dio_0->ival = &dio0;
+    }
+
+    if (rst->count == 0) {
+        rst->ival = &RST;
+    }
+
+    if (rebroadcast->count == 0) {
+        rebroadcast->ival = &rebroadcast_default;
+    }
+}
 
 int main(int argc, char *argv[]) {
 
@@ -36,6 +62,7 @@ int main(int argc, char *argv[]) {
         ss_pin = arg_intn(NULL, "sspin", "<n>", 0, 1, "sspin number"),
         dio_0 = arg_intn(NULL, "dio0", "<n>", 0, 1, "dio0 number"),
         rst = arg_intn(NULL, "rst", "<n>", 0, 1, "rst number"),
+        rebroadcast = arg_intn(NULL, "rebroadcast", "<n>", 0, 1, "enable or disable packet rebroadcasting"),
         end = arg_end(20),
     };
 
@@ -58,27 +85,21 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    // handle default values pulled in from globals
+    set_defaults();
 
-    if (mode->count == 0) {
-        mode->sval = &client_mode;
+
+    event_loop_opts_t event_opts = default_options;
+    
+    if (*rebroadcast->ival == 0) {
+        event_opts.rebroadcast = false;
+    } else {
+        event_opts.rebroadcast = true;
     }
 
-    if (ss_pin->count == 0) {
-        ss_pin->ival = &ssPin;
-    }
-
-    if (dio_0->count == 0) {
-        dio_0->ival = &dio0;
-    }
-
-    if (rst->count == 0) {
-        rst->ival = &RST;
-    }
-
-    bool mode_receive = true;
     if (strcmp("sender", *mode->sval) == 0) {
-        mode_receive = false;
+        event_opts.mode_receive = false;
+        event_opts.send_data = hello;
+        event_opts.send_data_len = strlen((char *)hello);
     }
 
     // prepare lora client options
@@ -102,7 +123,7 @@ int main(int argc, char *argv[]) {
     LOG_INFO(client->thl, 0, "lora client initialized");
 
     // start the main event loop
-    event_loop_lora_client_t(client, mode_receive, hello);
+    event_loop_lora_client_t(client, event_opts);
 
     // clear up allocated resources for lora_client_t
     free_lora_client_t(client);

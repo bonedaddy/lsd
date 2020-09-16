@@ -57,17 +57,19 @@ void free_lora_client_t(lora_client_t *client) {
  * are transmitting
  * @param data when mode_receive is set to false, this is the data we will transmit
  */
-void event_loop_lora_client_t(lora_client_t *client, bool mode_receive, byte *data) {
-    if (mode_receive == false) {
+void event_loop_lora_client_t(lora_client_t *client, event_loop_opts_t opts) {
+    byte bytesReceived = 0;
+    if (opts.mode_receive == false) {
 
         configure_sender(client);
 
         while (1) {
             if (exit_event_loop == true) {
+                LOG_INFO(client->thl, 0, "exiting event loop")
                 return;
             }
-            txlora(client, data, strlen((char *)data));
-            delay(5000);
+            txlora(client, opts.send_data, opts.send_data_len);
+            delay(opts.send_delay);
         }
 
     } else {
@@ -77,11 +79,22 @@ void event_loop_lora_client_t(lora_client_t *client, bool mode_receive, byte *da
 
         while (1) {
             if (exit_event_loop == true) {
+                LOG_INFO(client->thl, 0, "exiting event loop");
                 return;
             }
+
             memset(buffer, 0, 256);
-            receive_packet(client, buffer);
-            delay(1);
+            bytesReceived = receive_packet(client, buffer);
+
+            if (bytesReceived > 0 && opts.rebroadcast == true) {
+                configure_sender(client); // configure for send mode
+                txlora(client, buffer,
+                       (size_t)bytesReceived); // send the actual data
+                delay(opts.send_delay);
+                configure_receiver(client); // configure for receive mode
+            } else {
+                delay(1);
+            }
         }
     }
 }
@@ -138,8 +151,8 @@ void configure_sender(lora_client_t *client) {
 
     configPower(client, client->opts.config_power);
 
-    LOGF_INFO(client->thl, 0, "sending packets at SF%i on %.6lf Mhz",
-              client->opts.sf, (double)client->opts.frequency / 1000000);
+    LOGF_DEBUG(client->thl, 0, "sending packets at SF%i on %.6lf Mhz",
+               client->opts.sf, (double)client->opts.frequency / 1000000);
 }
 
 /*!
@@ -150,8 +163,8 @@ void configure_receiver(lora_client_t *client) {
     opmode(client, OPMODE_STANDBY);
     opmode(client, OPMODE_RX);
 
-    LOGF_INFO(client->thl, 0, "listening at SF%i on %.6lf Mhz", client->opts.sf,
-              (double)client->opts.frequency / 1000000);
+    LOGF_DEBUG(client->thl, 0, "listening at SF%i on %.6lf Mhz", client->opts.sf,
+               (double)client->opts.frequency / 1000000);
 }
 
 void die(const char *s) {
@@ -197,7 +210,7 @@ void opmode(lora_client_t *client, uint8_t mode) {
 
 void opmodeLora(lora_client_t *client) {
     uint8_t u = OPMODE_LORA;
-    if (sx1272 == false)
+    if (client->sx1272 == false)
         u |= 0x8; // TBD: sx1276 high freq
     writeReg(client, REG_OPMODE, u);
 }
@@ -214,7 +227,7 @@ void setup_lora(lora_client_t *client) {
     if (version == 0x22) {
         // sx1272
         LOG_INFO(client->thl, 0, "SX1272 board detected, starting");
-        sx1272 = true;
+        client->sx1272 = true;
     } else {
         // sx1276?
         digitalWrite(client->opts.rst, LOW);
@@ -225,7 +238,7 @@ void setup_lora(lora_client_t *client) {
         if (version == 0x12) {
             // sx1276
             LOG_INFO(client->thl, 0, "SX1276 board detected, starting");
-            sx1272 = false;
+            client->sx1272 = false;
         } else {
             LOG_ERROR(client->thl, 0, "unrecognized transceiver");
             // printf("Version: 0x%x\n",version);
@@ -244,7 +257,7 @@ void setup_lora(lora_client_t *client) {
 
     writeReg(client, REG_SYNC_WORD, 0x34); // LoRaWAN public sync word
 
-    if (sx1272) {
+    if (client->sx1272) {
         if (client->opts.sf == SF11 || client->opts.sf == SF12) {
             writeReg(client, REG_MODEM_CONFIG, 0x0B);
         } else {
@@ -302,13 +315,14 @@ byte receive(lora_client_t *client, char *payload) {
     return receivedBytes;
 }
 
-void receive_packet(lora_client_t *client, char *buffer) {
+byte receive_packet(lora_client_t *client, char *buffer) {
 
-    long int SNR;
-    int rssicorr;
+    long int SNR; // should we initialize to 0
+    int rssicorr; // should we initialize to 0?
+    byte receivedBytes = 0;
 
     if (digitalRead(client->opts.dio_0) == 1) {
-        byte receivedBytes = receive(client, buffer);
+        receivedBytes = receive(client, buffer);
         if (receivedBytes > 0) {
             byte value = readReg(client, REG_PKT_SNR_VALUE);
             if (value & 0x80) // The SNR sign bit is 1
@@ -321,7 +335,7 @@ void receive_packet(lora_client_t *client, char *buffer) {
                 SNR = (value & 0xFF) >> 2;
             }
 
-            if (sx1272) {
+            if (client->sx1272) {
                 rssicorr = 139;
             } else {
                 rssicorr = 157;
@@ -334,10 +348,11 @@ void receive_packet(lora_client_t *client, char *buffer) {
         } // received a message
 
     } // dio0=1
+    return receivedBytes;
 }
 
 void configPower(lora_client_t *client, int8_t pw) {
-    if (sx1272 == false) {
+    if (client->sx1272 == false) {
         // no boost used for now
         if (pw >= 17) {
             pw = 15;
@@ -389,6 +404,4 @@ void txlora(lora_client_t *client, byte *frame, byte datalen) {
     writeBuf(client, REG_FIFO, frame, datalen);
     // now we actually start the transmission
     opmode(client, OPMODE_TX);
-
-    printf("send: %s\n", frame);
 }

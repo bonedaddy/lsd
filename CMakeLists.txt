@@ -43,6 +43,7 @@ endif()
 include(cmake/ulog.cmake)
 
 include_directories(${PROJECT_SOURCE_DIR}/include)
+include_directories(${PROJECT_SOURCE_DIR}/deps/ulog)
 
 add_library(lora 
     SHARED
@@ -50,5 +51,7 @@ add_library(lora
         ./src/lora.c
 )
 
+target_link_libraries(lora ulog)
+
 add_executable(lora-cli ./main.c)
-target_link_libraries(lora-cli lora wiringPi pthread)
+target_link_libraries(lora-cli lora wiringPi pthread ulog argtable3)

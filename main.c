@@ -94,6 +94,9 @@ int main(int argc, char *argv[]) {
     // start the main event loop
     event_loop_lora_client_t(client, mode_receive, hello);
 
+    // clear up allocated resources for lora_client_t
+    free_lora_client_t(client);
+
     /* deallocate each non-null entry in argtable[] */
     arg_freetable(argtable, sizeof(argtable) / sizeof(argtable[0]));
     return (0);

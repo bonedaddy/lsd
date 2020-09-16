@@ -24,6 +24,7 @@
 #include "lora.h"
 #include <wiringPi.h>
 #include <wiringPiSPI.h>
+#include <stdlib.h>
 
 byte receivedbytes;
 
@@ -42,6 +43,14 @@ void handle_signal();
 */
 void handle_signal() {
     exit_event_loop = true;
+}
+
+/*!
+  * @brief used to free up resources allocated for lora_client_t
+*/
+void free_lora_client_t(lora_client_t *client) {
+    clear_thread_logger(client->thl);
+    free(client);
 }
 
 /*!

@@ -8,6 +8,11 @@
 
 byte hello[32] = "HELLO";
 
+// override for compile time frequency selection
+#ifndef USE_FREQUENCY
+#define USE_FREQUENCY FREQ_868_MHZ
+#endif
+
 // SX1272 - Raspberry connections
 int ssPin = 6;
 int dio0 = 7;
@@ -15,9 +20,6 @@ int RST = 0;
 
 // Set spreading factor (SF7 - SF12)
 sf_t sf = SF7;
-
-// Set center frequency
-uint32_t freq = 868100000; // in Mhz! (868.1)
 
 struct arg_lit *help;
 struct arg_int *ss_pin, *dio_0, *rst;
@@ -75,7 +77,7 @@ int main(int argc, char *argv[]) {
                                .spi_channel = CHANNEL,
                                .spi_speed = 500000,
                                .config_power = 23,
-                               .frequency = freq,
+                               .frequency = USE_FREQUENCY,
                                .sf = sf};
 
     lora_client_t *client = new_lora_client_t(opts);

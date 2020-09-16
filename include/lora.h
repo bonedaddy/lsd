@@ -18,6 +18,12 @@
 // #############################################
 // #############################################
 
+#define FREQ_433_MHZ ((uint32_t)433E6)
+#define FREQ_868_MHZ ((uint32_t)868E6)
+// should we do this instead?? not sure
+// #define FREQ_868_MHZ 8681E5
+#define FREQ_915_MHZ ((uint32_t)915E6)
+
 #define REG_FIFO 0x00
 #define REG_OPMODE 0x01
 #define REG_FIFO_ADDR_PTR 0x0D
@@ -171,7 +177,8 @@ void free_lora_client_t(lora_client_t *client);
 
 /*!
  * @brief main event loop
- * @param mode_receive if true indicates we are receiving data, if false indicates we are transmitting
+ * @param mode_receive if true indicates we are receiving data, if false indicates we
+ * are transmitting
  * @param data when mode_receive is set to false, this is the data we will transmit
  */
 void event_loop_lora_client_t(lora_client_t *client, bool mode_receive, byte *data);

@@ -57,18 +57,19 @@ void free_lora_client_t(lora_client_t *client) {
  * are transmitting
  * @param data when mode_receive is set to false, this is the data we will transmit
  */
-void event_loop_lora_client_t(lora_client_t *client, bool mode_receive, byte *data) {
+void event_loop_lora_client_t(lora_client_t *client, event_loop_opts_t opts) {
     byte bytesReceived = 0;
-    if (mode_receive == false) {
+    if (opts.mode_receive == false) {
 
         configure_sender(client);
 
         while (1) {
             if (exit_event_loop == true) {
+                LOG_INFO(client->thl, 0, "exiting event loop")
                 return;
             }
-            txlora(client, data, strlen((char *)data));
-            delay(5000);
+            txlora(client, opts.send_data, opts.send_data_len);
+            delay(opts.send_delay);
         }
 
     } else {
@@ -78,6 +79,7 @@ void event_loop_lora_client_t(lora_client_t *client, bool mode_receive, byte *da
 
         while (1) {
             if (exit_event_loop == true) {
+                LOG_INFO(client->thl, 0, "exiting event loop");
                 return;
             }
             memset(buffer, 0, 256);
@@ -85,7 +87,7 @@ void event_loop_lora_client_t(lora_client_t *client, bool mode_receive, byte *da
             if (bytesReceived > 0) {
                 configure_sender(client); // configure for send mode
                 txlora(client, buffer, (size_t)bytesReceived); // send the actual data
-                delay(1000);
+                delay(opts.send_delay);
                 configure_receiver(client); // configure for receive mode
 
             }
@@ -399,6 +401,4 @@ void txlora(lora_client_t *client, byte *frame, byte datalen) {
     writeBuf(client, REG_FIFO, frame, datalen);
     // now we actually start the transmission
     opmode(client, OPMODE_TX);
-
-    printf("send: %s\n", frame);
 }

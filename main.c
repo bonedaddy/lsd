@@ -76,11 +76,14 @@ int main(int argc, char *argv[]) {
         rst->ival = &RST;
     }
 
-    bool mode_receive = true;
-    if (strcmp("sender", *mode->sval) == 0) {
-        mode_receive = false;
-    }
+    event_loop_opts_t event_opts = default_options;
 
+    if (strcmp("sender", *mode->sval) == 0) {
+        event_opts.mode_receive = false;
+        event_opts.send_data = hello;
+        event_opts.send_data_len = strlen((char *)hello);
+    }
+    
     // prepare lora client options
     lora_client_opts_t opts = {.ss_pin = *ss_pin->ival,
                                .dio_0 = *dio_0->ival,
@@ -102,7 +105,7 @@ int main(int argc, char *argv[]) {
     LOG_INFO(client->thl, 0, "lora client initialized");
 
     // start the main event loop
-    event_loop_lora_client_t(client, mode_receive, hello);
+    event_loop_lora_client_t(client, event_opts);
 
     // clear up allocated resources for lora_client_t
     free_lora_client_t(client);

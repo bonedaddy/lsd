@@ -39,8 +39,10 @@ int main(int argc, char *argv[]) {
         end = arg_end(20),
     };
 
+    // parse cli arguments
     int nerrors = arg_parse(argc, argv, argtable);
 
+    // handle help flag early
     if (help->count > 0) {
         printf("Usage: %s", argv[0]);
         arg_print_syntax(stdout, argtable, "\n");
@@ -49,11 +51,14 @@ int main(int argc, char *argv[]) {
         return 0;
     }
 
+    // parse errors if any
     if (nerrors > 0) {
         arg_freetable(argtable, sizeof(argtable) / sizeof(argtable[0]));
         arg_print_errors(stdout, end, argv[0]);
         return 1;
     }
+
+    // handle default values pulled in from globals
 
     if (mode->count == 0) {
         mode->sval = &client_mode;
@@ -71,6 +76,12 @@ int main(int argc, char *argv[]) {
         rst->ival = &RST;
     }
 
+    bool mode_receive = true;
+    if (strcmp("sender", *mode->sval) == 0) {
+        mode_receive = false;
+    }
+
+    // prepare lora client options
     lora_client_opts_t opts = {.ss_pin = *ss_pin->ival,
                                .dio_0 = *dio_0->ival,
                                .rst = *rst->ival,
@@ -80,18 +91,15 @@ int main(int argc, char *argv[]) {
                                .frequency = USE_FREQUENCY,
                                .sf = sf};
 
+    // initialize the lora client
     lora_client_t *client = new_lora_client_t(opts);
     if (client == NULL) {
+        arg_freetable(argtable, sizeof(argtable) / sizeof(argtable[0]));
         printf("failed to start lora client\n");
         exit(1);
     }
 
     LOG_INFO(client->thl, 0, "lora client initialized");
-    bool mode_receive = true;
-
-    if (strcmp("sender", *mode->sval) == 0) {
-        mode_receive = false;
-    }
 
     // start the main event loop
     event_loop_lora_client_t(client, mode_receive, hello);

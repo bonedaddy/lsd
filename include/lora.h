@@ -18,7 +18,12 @@
 // #############################################
 // #############################################
 
+/*!
+  * @brief can be changed via compile time variables if needed
+*/
+#ifndef CHANNEL
 #define CHANNEL 0
+#endif
 
 // frequency declarations, which one you use
 // will ultimately depend on the board you have

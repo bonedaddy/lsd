@@ -165,10 +165,9 @@ bool sx1272 = true;
 static const int CHANNEL = 0;
 
 /*!
- *
- * @note function declaration
- *
- */
+  * @brief main event loop
+*/
+void event_loop_lora_client_t(lora_client_t *client, bool mode_receive, byte *data);
 
 /*!
  * @brief returns a new lora client initializing the onboard device

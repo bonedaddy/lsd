@@ -20,12 +20,62 @@
 #include <sys/types.h>
 
 #include <sys/ioctl.h>
-
+#include <signal.h>
 #include "lora.h"
 #include <wiringPi.h>
 #include <wiringPiSPI.h>
 
 byte receivedbytes;
+
+/*!
+  * @brief when set to true, causes the event loop to exit
+*/
+bool exit_event_loop = false;
+
+/*!
+  * @brief "internal" function that sets exit_event_loop
+*/
+void handle_signal();
+
+/*!
+  * @brief "internal" function that sets exit_event_loop
+*/
+void handle_signal() {
+    exit_event_loop = true;
+}
+
+/*!
+  * @brief main event loop
+*/
+void event_loop_lora_client_t(lora_client_t *client, bool mode_receive, byte *data) {
+    if (mode_receive == false) {
+
+        configure_sender(client);
+
+        while (1) {
+            if (exit_event_loop == true) {
+                return;
+            }
+            txlora(client, data, strlen((char *)data));
+            delay(5000);
+        }
+
+    } else {
+
+        configure_receiver(client);
+        char buffer[256];
+
+        while (1) {
+            if (exit_event_loop == true) {
+                return;
+            }
+            memset(buffer, 0, 256);
+            receive_packet(client, buffer);
+            LOGF_INFO(client->thl, 0, "received a message: %s", buffer);
+            delay(1);
+        }
+    }
+}
 
 /*!
  * @brief returns a new lora client initializing the onboard device
@@ -55,6 +105,13 @@ lora_client_t *new_lora_client_t(lora_client_opts_t opts) {
     wiringPiSPISetup(opts.spi_channel, opts.spi_speed);
 
     setup_lora(client);
+
+    // register signal handling functions
+    // these will set a boolean indicating the
+    // event loop should exit
+    signal(SIGINT, handle_signal);
+    signal(SIGTERM, handle_signal);
+    signal(SIGQUIT, handle_signal);
 
     return client;
 }

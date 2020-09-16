@@ -85,29 +85,15 @@ int main(int argc, char *argv[]) {
     }
 
     LOG_INFO(client->thl, 0, "lora client initialized");
+    bool mode_receive = true;
 
-    if (!strcmp("sender", *mode->sval)) {
-        configure_sender(client);
-        if (argc > 2)
-            strncpy((char *)hello, argv[2], sizeof(hello));
-
-        while (1) {
-            txlora(client, hello, strlen((char *)hello));
-            delay(5000);
-        }
-    } else {
-
-        configure_receiver(client);
-
-        char buffer[256];
-
-        while (1) {
-            memset(buffer, 0, 256);
-            receive_packet(client, buffer);
-            LOGF_INFO(client->thl, 0, "received a message: %s", buffer);
-            delay(1);
-        }
+    if (strcmp("sender", *mode->sval) == 0) {
+        mode_receive = false;
     }
+
+    // start the main event loop
+    event_loop_lora_client_t(client, mode_receive, hello);
+
     /* deallocate each non-null entry in argtable[] */
     arg_freetable(argtable, sizeof(argtable) / sizeof(argtable[0]));
     return (0);

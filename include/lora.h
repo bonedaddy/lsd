@@ -18,6 +18,8 @@
 // #############################################
 // #############################################
 
+#define CHANNEL 0
+
 // frequency declarations, which one you use
 // will ultimately depend on the board you have
 // some frequencies may be subject to regulations
@@ -197,7 +199,6 @@ event_loop_opts_t default_options = {
 };
 
 bool sx1272 = true;
-static const int CHANNEL = 0;
 
 /*!
  * @brief used to free up resources allocated for lora_client_t

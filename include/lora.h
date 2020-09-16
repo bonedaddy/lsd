@@ -22,12 +22,12 @@
 // will ultimately depend on the board you have
 // some frequencies may be subject to regulations
 #define FREQ_433_MHZ ((uint32_t)433E6)
-#define FREQ_868_MHZ ((uint32_t)868E6)
+// #define FREQ_868_MHZ ((uint32_t)868E6)
 // should we do this instead?? not sure
 // there is technically a difference, however
 // from what i can tell there doesnt seem to make
 // a major difference at least in small trials
-// #define FREQ_868_MHZ 8681E5
+#define FREQ_868_MHZ 8681E5
 #define FREQ_915_MHZ ((uint32_t)915E6)
 
 #define REG_FIFO 0x00

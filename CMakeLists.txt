@@ -40,6 +40,8 @@ if(NOT CMAKE_BUILD_TYPE)
     list(APPEND cxx-flags -std=c++2a -Wall -Wextra -Werror -pedantic)
 endif()
 
+include(cmake/ulog.cmake)
+
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
 add_library(lora 

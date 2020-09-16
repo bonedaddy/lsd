@@ -165,13 +165,13 @@ bool sx1272 = true;
 static const int CHANNEL = 0;
 
 /*!
-  * @brief used to free up resources allocated for lora_client_t
-*/
+ * @brief used to free up resources allocated for lora_client_t
+ */
 void free_lora_client_t(lora_client_t *client);
 
 /*!
-  * @brief main event loop
-*/
+ * @brief main event loop
+ */
 void event_loop_lora_client_t(lora_client_t *client, bool mode_receive, byte *data);
 
 /*!

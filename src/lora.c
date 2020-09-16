@@ -19,43 +19,43 @@
 #include <sys/time.h>
 #include <sys/types.h>
 
-#include <sys/ioctl.h>
-#include <signal.h>
 #include "lora.h"
+#include <signal.h>
+#include <stdlib.h>
+#include <sys/ioctl.h>
 #include <wiringPi.h>
 #include <wiringPiSPI.h>
-#include <stdlib.h>
 
 byte receivedbytes;
 
 /*!
-  * @brief when set to true, causes the event loop to exit
-*/
+ * @brief when set to true, causes the event loop to exit
+ */
 bool exit_event_loop = false;
 
 /*!
-  * @brief "internal" function that sets exit_event_loop
-*/
+ * @brief "internal" function that sets exit_event_loop
+ */
 void handle_signal();
 
 /*!
-  * @brief "internal" function that sets exit_event_loop
-*/
+ * @brief "internal" function that sets exit_event_loop
+ */
 void handle_signal() {
     exit_event_loop = true;
 }
 
 /*!
-  * @brief used to free up resources allocated for lora_client_t
-*/
+ * @brief used to free up resources allocated for lora_client_t
+ */
 void free_lora_client_t(lora_client_t *client) {
     clear_thread_logger(client->thl);
     free(client);
 }
 
 /*!
-  * @brief main event loop
-*/
+ * @brief main event loop
+ */
 void event_loop_lora_client_t(lora_client_t *client, bool mode_receive, byte *data) {
     if (mode_receive == false) {
 

@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
         event_opts.send_data = hello;
         event_opts.send_data_len = strlen((char *)hello);
     }
-    
+
     // prepare lora client options
     lora_client_opts_t opts = {.ss_pin = *ss_pin->ival,
                                .dio_0 = *dio_0->ival,

@@ -82,11 +82,14 @@ void event_loop_lora_client_t(lora_client_t *client, event_loop_opts_t opts) {
                 LOG_INFO(client->thl, 0, "exiting event loop");
                 return;
             }
+
             memset(buffer, 0, 256);
             bytesReceived = receive_packet(client, buffer);
+
             if (bytesReceived > 0 && opts.rebroadcast == true) {
                 configure_sender(client); // configure for send mode
-                txlora(client, buffer, (size_t)bytesReceived); // send the actual data
+                txlora(client, buffer,
+                       (size_t)bytesReceived); // send the actual data
                 delay(opts.send_delay);
                 configure_receiver(client); // configure for receive mode
             } else {
@@ -149,7 +152,7 @@ void configure_sender(lora_client_t *client) {
     configPower(client, client->opts.config_power);
 
     LOGF_DEBUG(client->thl, 0, "sending packets at SF%i on %.6lf Mhz",
-              client->opts.sf, (double)client->opts.frequency / 1000000);
+               client->opts.sf, (double)client->opts.frequency / 1000000);
 }
 
 /*!
@@ -161,7 +164,7 @@ void configure_receiver(lora_client_t *client) {
     opmode(client, OPMODE_RX);
 
     LOGF_DEBUG(client->thl, 0, "listening at SF%i on %.6lf Mhz", client->opts.sf,
-              (double)client->opts.frequency / 1000000);
+               (double)client->opts.frequency / 1000000);
 }
 
 void die(const char *s) {
@@ -317,7 +320,7 @@ byte receive_packet(lora_client_t *client, char *buffer) {
     long int SNR; // should we initialize to 0
     int rssicorr; // should we initialize to 0?
     byte receivedBytes = 0;
-    
+
     if (digitalRead(client->opts.dio_0) == 1) {
         receivedBytes = receive(client, buffer);
         if (receivedBytes > 0) {

@@ -19,8 +19,8 @@
 // #############################################
 
 /*!
-  * @brief can be changed via compile time variables if needed
-*/
+ * @brief can be changed via compile time variables if needed
+ */
 #ifndef CHANNEL
 #define CHANNEL 0
 #endif
@@ -172,10 +172,10 @@ typedef struct lora_client_opts {
 } lora_client_opts_t;
 
 /*!
-  * @brief used to configure the event loop
-  * @note the send data consists of data to send once the event loop starts
-  * @note and it isn't necessary to be set, only if mode_receive is false
-*/
+ * @brief used to configure the event loop
+ * @note the send data consists of data to send once the event loop starts
+ * @note and it isn't necessary to be set, only if mode_receive is false
+ */
 typedef struct event_loop_opts {
     bool mode_receive;
     bool rebroadcast;
@@ -193,8 +193,8 @@ typedef struct lora_client {
 } lora_client_t;
 
 /*!
-  * @brief sensible default options to feed into the event loop function
-*/
+ * @brief sensible default options to feed into the event loop function
+ */
 event_loop_opts_t default_options = {
     .mode_receive = true,
     .rebroadcast = true,
@@ -245,7 +245,7 @@ void opmodeLora(lora_client_t *client);
 void setup_lora(lora_client_t *client);
 byte receive(lora_client_t *client, char *payload);
 
-/*! 
+/*!
  * @brief used to receive a packet off the radio
  * @return size of the payload we received after parsing the packet
  */

@@ -45,16 +45,6 @@ include(cmake/ulog.cmake)
 include_directories(${PROJECT_SOURCE_DIR}/include)
 include_directories(${PROJECT_SOURCE_DIR}/deps/ulog)
 
-file(GLOB_RECURSE ULOG_SOURCES
-    ./deps/ulog/*.h
-    ./deps/ulog/*.c
-)
-
-add_library(ulog
-    SHARED
-        ${ULOG_SOURCES}
-)
-
 add_library(lora 
     SHARED
         ./include/lora.h
